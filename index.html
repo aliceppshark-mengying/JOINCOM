@@ -1214,6 +1214,37 @@ function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; 
 
   // (wireButtons handles both QC and payslip)
 
+  // ── 导出 / 导入 ──
+  document.getElementById('btn-export').addEventListener('click', function(){
+    var json = JSON.stringify(D, null, 2);
+    var blob = new Blob([json], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var d = new Date();
+    a.href = url;
+    a.download = 'joincom-data-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('✓ 数据已导出，请保存好 JSON 文件');
+  });
+
+  document.getElementById('btn-import').addEventListener('change', function(e){
+    var file = e.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try {
+        var imp = JSON.parse(ev.target.result);
+        if(!imp.partners||!imp.ledger) throw new Error('格式错误');
+        D = imp;
+        selPid = D.partners[0] ? D.partners[0].id : null;
+        save(D); renderAll();
+        toast('✓ 导入成功，共 '+D.ledger.length+' 条记录');
+      } catch(err){ alert('导入失败：'+err.message); }
+    };
+    reader.readAsText(file);
+    this.value = '';
+  });
+
 renderAll();
 
 })();
